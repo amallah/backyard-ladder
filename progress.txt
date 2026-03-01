@@ -1,3 +1,15 @@
+## 2026-03-01 - US-011
+Thread: https://ampcode.com/threads/$AMP_CURRENT_THREAD_ID
+- Created `src/app/session/[slug]/page.tsx` (server component): fetches session by slug (notFound if missing), fetches active players (is_active=true) sorted by Elo desc, passes to Leaderboard client component
+- Created `src/app/session/[slug]/Leaderboard.tsx` (client component): Supabase Realtime subscription on players table, maintains sorted-by-Elo state, renders rank/name/Elo/status-badge table, shows "Session Ended — Final Standings" banner when sessionEnded=true
+- Added `Link` to `/session/${slug}` ("View Leaderboard →") in host dashboard and player view pages
+- Files changed: src/app/session/[slug]/page.tsx (new), src/app/session/[slug]/Leaderboard.tsx (new), src/app/session/[slug]/host/page.tsx, src/app/session/[slug]/player/[id]/page.tsx
+- **Learnings for future iterations:**
+  - Leaderboard Realtime pattern: INSERT → append + re-sort; UPDATE → replace (or remove if is_active=false) + re-sort; DELETE → filter out
+  - Re-sort on every Realtime update (`.sort((a,b) => b.elo - a.elo)`) keeps the ranking correct after Elo changes without a separate sort step
+  - `sessionEnded` can be passed as a prop from server component — no need for Realtime on sessions table just for a static status banner
+---
+
 ## 2026-03-01 - US-010
 Thread: https://ampcode.com/threads/$AMP_CURRENT_THREAD_ID
 - Added `submitScore(matchId, scoreA, scoreB)` server action to `actions.ts`: fetches match row → fetches 4 players' current Elos → calls `calculateEloChange()` → updates match (score_a, score_b, elo_change) → updates each player's elo and status='available' via parallel promises

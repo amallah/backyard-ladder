@@ -186,8 +186,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 11,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Created src/app/session/[slug]/page.tsx (server component: fetches session + active players, notFound on missing slug) and src/app/session/[slug]/Leaderboard.tsx (client component: Realtime subscription on players table, sorted by Elo desc, Session Ended banner when status=ended). Added 'View Leaderboard →' link to host dashboard and player view pages."
     },
     {
       "id": "US-012",
