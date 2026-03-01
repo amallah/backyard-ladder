@@ -70,3 +70,24 @@ export async function togglePlayerStatus(playerId: string): Promise<void> {
 
   if (error) throw new Error(`Failed to update status: ${error.message}`);
 }
+
+export async function removePlayer(playerId: string): Promise<void> {
+  const { error } = await supabase
+    .from("players")
+    .update({ is_active: false })
+    .eq("id", playerId);
+
+  if (error) throw new Error(`Failed to remove player: ${error.message}`);
+}
+
+export async function updatePlayerElo(
+  playerId: string,
+  elo: number
+): Promise<void> {
+  const { error } = await supabase
+    .from("players")
+    .update({ elo })
+    .eq("id", playerId);
+
+  if (error) throw new Error(`Failed to update Elo: ${error.message}`);
+}
