@@ -17,8 +17,8 @@
         "Typecheck passes"
       ],
       "priority": 1,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Supabase project: ceyzbfgoayjyxhweywtu. Tables created with RLS and Realtime enabled on players and matches."
     },
     {
       "id": "US-002",
