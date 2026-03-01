@@ -151,8 +151,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 9,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Added match suggestion UI to PlayerList.tsx: generateAllSuggestions() evaluates all C(n,4)*3 team splits sorted by win% delta. State-driven suggestion display with Re-shuffle (cycles through sorted candidates) and Accept (calls acceptMatch server action: inserts match row + sets 4 players to 'playing'). Suggest Match button disabled when <4 available players."
     },
     {
       "id": "US-010",
