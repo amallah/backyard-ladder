@@ -1,0 +1,25 @@
+## Codebase Patterns
+- Supabase project ID: ceyzbfgoayjyxhweywtu (backyard-ladder), URL: https://ceyzbfgoayjyxhweywtu.supabase.co
+- Next.js 16.1.6 with App Router, TypeScript, Tailwind CSS, src/ directory layout
+- All imports use @/* alias pointing to src/
+- Supabase client is in src/lib/supabase.ts (browser-side client using NEXT_PUBLIC_ env vars)
+- RLS policies are intentionally permissive (public read/write, no auth) per PRD
+- Realtime enabled on players and matches tables
+
+# Ralph Progress Log
+Started: Sun, Mar  1, 2026  2:40:20 PM
+---
+
+## 2026-03-01 - US-001
+Thread: https://ampcode.com/threads/$AMP_CURRENT_THREAD_ID
+- Bootstrapped Next.js 16.1.6 app with TypeScript, Tailwind CSS, App Router, src/ directory
+- Created Supabase project: backyard-ladder (ceyzbfgoayjyxhweywtu, us-east-1)
+- Applied migration: sessions, players, matches tables with correct schema, FKs, unique constraints
+- RLS enabled with public read/write policies on all 3 tables (no auth per PRD)
+- Realtime enabled on players and matches via supabase_realtime publication
+- Files created: package.json, tsconfig.json, next.config.ts, tailwind.config.ts, postcss.config.mjs, .gitignore, .eslintrc.json, src/lib/supabase.ts, src/lib/utils.ts, src/app/globals.css, src/app/layout.tsx, src/app/page.tsx, .env.local (gitignored)
+- **Learnings for future iterations:**
+  - Next.js 16 requires ESLint 9; use `eslint: "^9"` and `eslint-config-next: "latest"` in devDependencies
+  - .env.local is gitignored; Supabase URL and anon key are stored there
+  - `create-next-app` can't initialize into a directory with existing files; bootstrap manually instead
+---

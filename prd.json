@@ -17,8 +17,8 @@
         "Typecheck passes"
       ],
       "priority": 1,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Supabase project: ceyzbfgoayjyxhweywtu. Tables created with RLS and Realtime enabled on players and matches."
     },
     {
       "id": "US-002",
@@ -32,8 +32,8 @@
         "Typecheck passes"
       ],
       "priority": 2,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Created src/lib/slug.ts with adjective-noun wordlists, Supabase collision check, and up to 5 retry attempts."
     },
     {
       "id": "US-003",
@@ -51,8 +51,8 @@
         "Typecheck passes"
       ],
       "priority": 3,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Created src/lib/elo.ts with pure calculateEloChange(MatchInput): EloResult. Team avg Elo, expected outcome, MOV multiplier, K=32. Denominator clamped to 0.1 to avoid division by zero for large upsets."
     },
     {
       "id": "US-004",
@@ -67,8 +67,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 4,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Created src/app/actions.ts with createSession server action (generateSlug + insert + redirect). Updated src/app/page.tsx with sport selector form."
     },
     {
       "id": "US-005",
@@ -83,8 +83,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 5,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Created src/app/session/[slug]/host/page.tsx (server component: fetches session, 404 on missing slug, builds join URL from request headers) and QRDisplay.tsx (client component wrapping react-qr-code). Build passes."
     },
     {
       "id": "US-006",
@@ -100,8 +100,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 6,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Created src/app/session/[slug]/join/page.tsx (server component: fetches session, 404 if missing, ended message if status='ended') and JoinForm.tsx (client component using useActionState with joinSession server action). Added joinSession to actions.ts: checks duplicate nickname, inserts player row, redirects to /session/[slug]/player/[id]. Build and typecheck pass."
     },
     {
       "id": "US-007",
@@ -117,8 +117,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 7,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Created src/app/session/[slug]/player/[id]/page.tsx (server component: fetches player + validates session slug, notFound on mismatch) and StatusToggle.tsx (client component: useTransition + router.refresh for optimistic toggle). Added togglePlayerStatus server action to actions.ts. Build and typecheck pass."
     },
     {
       "id": "US-008",
@@ -134,8 +134,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 8,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Created src/app/session/[slug]/host/PlayerList.tsx (client component: Supabase Realtime subscription, inline Elo editing, Remove button). Added removePlayer and updatePlayerElo server actions to actions.ts. Updated host page.tsx to fetch initial players and pass to PlayerList. Build and typecheck pass."
     },
     {
       "id": "US-009",
@@ -151,8 +151,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 9,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Added match suggestion UI to PlayerList.tsx: generateAllSuggestions() evaluates all C(n,4)*3 team splits sorted by win% delta. State-driven suggestion display with Re-shuffle (cycles through sorted candidates) and Accept (calls acceptMatch server action: inserts match row + sets 4 players to 'playing'). Suggest Match button disabled when <4 available players."
     },
     {
       "id": "US-010",
@@ -169,8 +169,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 10,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Added submitScore server action to actions.ts: fetches match + 4 players, calls calculateEloChange(), updates match (score_a, score_b, elo_change), updates each player's elo, sets all 4 statuses to 'available'. Host page now fetches initial active matches (score_a IS NULL) and passes as initialMatches to PlayerList. PlayerList: added matches state, Realtime subscription on matches table, scoreInputs state per match, Active Matches section with Team A/B player names, score inputs, and Submit Score button."
     },
     {
       "id": "US-011",
@@ -186,8 +186,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 11,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Created src/app/session/[slug]/page.tsx (server component: fetches session + active players, notFound on missing slug) and src/app/session/[slug]/Leaderboard.tsx (client component: Realtime subscription on players table, sorted by Elo desc, Session Ended banner when status=ended). Added 'View Leaderboard →' link to host dashboard and player view pages."
     },
     {
       "id": "US-012",
@@ -205,8 +205,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 12,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Added endSession server action to actions.ts (updates session status to 'ended'). Created EndSessionButton.tsx (client component using @radix-ui/react-dialog: confirms end session, warns if active matches present, calls endSession + router.refresh()). Updated host/page.tsx to show 'Session Ended' banner when status=ended, pass sessionEnded prop to PlayerList, and render EndSessionButton. Updated PlayerList.tsx to accept sessionEnded prop and disable Suggest Match when session is ended."
     }
   ]
 }
