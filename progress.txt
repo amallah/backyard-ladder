@@ -1,3 +1,17 @@
+## 2026-03-01 - US-006
+Thread: https://ampcode.com/threads/$AMP_CURRENT_THREAD_ID
+- Created `/session/[slug]/join` route for players to join a session by nickname
+- Server component `page.tsx` fetches session by slug, returns 404 via `notFound()` if missing, shows "Session Ended" message if status='ended'
+- Client component `JoinForm.tsx` uses `useActionState(joinSession, null)` from React 19 for inline error display
+- Added `joinSession` server action to `actions.ts`: trims name, checks for duplicate in session, inserts player with `status='available'`, `elo=1000`, `is_active=true`, redirects to `/session/[slug]/player/[player_id]`
+- Files changed: src/app/actions.ts, src/app/session/[slug]/join/page.tsx, src/app/session/[slug]/join/JoinForm.tsx
+- **Learnings for future iterations:**
+  - React 19 `useActionState` signature: `useActionState<State, FormData>(action, initialState)` — action must be `(prevState: State, formData: FormData) => Promise<State>`
+  - Server actions can `redirect()` (throws internally) while returning an error state on failure — `redirect` never returns so TS infers return type correctly
+  - Hidden form fields (`name="session_id"`, `name="slug"`) are the simplest way to pass context to a server action from a client component
+  - The `_prevState` parameter naming convention (underscore prefix) signals intentional non-use to TypeScript/linters
+---
+
 ## Codebase Patterns
 - Supabase client is exported from `src/lib/supabase.ts` as `supabase` (singleton)
 - Use `supabase.from("table").select().maybeSingle()` for optional single-row queries (returns null if not found, no error)

@@ -100,8 +100,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 6,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Created src/app/session/[slug]/join/page.tsx (server component: fetches session, 404 if missing, ended message if status='ended') and JoinForm.tsx (client component using useActionState with joinSession server action). Added joinSession to actions.ts: checks duplicate nickname, inserts player row, redirects to /session/[slug]/player/[id]. Build and typecheck pass."
     },
     {
       "id": "US-007",
