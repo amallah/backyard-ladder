@@ -1,0 +1,212 @@
+{
+  "project": "Backyard Ladder",
+  "branchName": "ralph/backyard-ladder-mvp",
+  "description": "Zero-friction session-based ranking and matchmaking app for local community sports (Pickleball and Cornhole). Host creates a session, players join via QR, app suggests balanced 2v2 matches using Elo ratings, and updates a live leaderboard in real-time.",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Database schema and migrations",
+      "description": "As a developer, I need the Supabase schema set up so all features have a working data layer.",
+      "acceptanceCriteria": [
+        "Create `sessions` table: id (uuid PK), slug (text unique), sport (text), status (text: 'active'|'ended', default 'active'), created_at (timestamp)",
+        "Create `players` table: id (uuid PK), session_id (uuid FK -> sessions), name (text), elo (int default 1000), status (text: 'available'|'playing'|'resting'), is_active (bool default true)",
+        "Create `matches` table: id (uuid PK), session_id (uuid FK -> sessions), player_a1, player_a2, player_b1, player_b2 (uuid FKs -> players), score_a (int), score_b (int), elo_change (float)",
+        "Add unique constraint on (session_id, name) in players table",
+        "Add RLS policies: public read/write on all three tables, no auth required",
+        "Enable Supabase Realtime on players and matches tables",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "Slug generation utility",
+      "description": "As a developer, I need a utility that generates unique human-readable slugs so session URLs are memorable and typeable.",
+      "acceptanceCriteria": [
+        "Create lib/slug.ts that exports generateSlug(): Promise<string>",
+        "Slugs are in adjective-noun format (e.g., fuzzy-panda, swift-eagle) using embedded wordlists",
+        "Function queries Supabase to check for slug collision and retries up to 5 times before throwing",
+        "Generated slugs are lowercase and URL-safe with no spaces",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "Elo engine utility",
+      "description": "As a developer, I need a pure utility module that calculates Elo changes so the ranking logic is testable and reusable.",
+      "acceptanceCriteria": [
+        "Create lib/elo.ts that exports calculateEloChange(matchInput): EloResult",
+        "matchInput includes: teamA player Elos, teamB player Elos, score_a, score_b",
+        "Team rating = average of the two player Elos",
+        "Expected outcome: E_A = 1 / (1 + 10^((R_B - R_A) / 400))",
+        "MOV multiplier: M = ln(|score_A - score_B| + 1) * 2.2 / ((R_winner - R_loser) * 0.001 + 2.2)",
+        "New Elo = Old Elo + 32 * (S - E) * M where S=1 for win, S=0 for loss",
+        "EloResult returns new Elo for all 4 players and the elo_change magnitude",
+        "Function is pure \u2014 no side effects, no database calls",
+        "Typecheck passes"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "Create session \u2014 home page and server action",
+      "description": "As a host, I want to create a new game session so that players can join and we can start playing.",
+      "acceptanceCriteria": [
+        "Home page at / shows a 'Create Session' form with a sport selector (Pickleball or Cornhole) and a Submit button",
+        "On submit, a server action calls generateSlug() and inserts a row into sessions with sport and generated slug",
+        "Host is redirected to /session/[slug]/host after creation",
+        "The host URL serves as the secret management link \u2014 no login or PIN",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "Host dashboard \u2014 QR code display",
+      "description": "As a host, I want to display a QR code so players can join the session from their phones.",
+      "acceptanceCriteria": [
+        "Page at /session/[slug]/host renders a host dashboard",
+        "Dashboard displays a large QR code generated with react-qr-code pointing to /session/[slug]/join",
+        "Session slug and sport name are displayed as text alongside the QR as a manual fallback",
+        "Page returns 404 if the slug does not exist in sessions",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-006",
+      "title": "Player join page",
+      "description": "As a player, I want to scan the QR code and enter my nickname so I can join the session.",
+      "acceptanceCriteria": [
+        "Page at /session/[slug]/join shows a nickname text input and a Join button",
+        "If session status is 'ended', show a friendly message and hide the join form",
+        "On submit, insert a player row with name, session_id, status='available', elo=1000",
+        "If nickname is already taken in this session, show an inline error message",
+        "On success, redirect player to /session/[slug]/player/[player_id]",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-007",
+      "title": "Player view \u2014 availability toggle",
+      "description": "As a player, I want to view my status and toggle my availability so the matchmaker knows if I want to play next.",
+      "acceptanceCriteria": [
+        "Page at /session/[slug]/player/[id] shows the player's nickname, current Elo, and current status",
+        "Page shows a toggle button labeled 'Available' or 'Resting' reflecting current status",
+        "Clicking the button updates player status in Supabase (available <-> resting)",
+        "Button is disabled (not clickable) when player status is 'playing'",
+        "Button color: green when available, gray when resting",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-008",
+      "title": "Host dashboard \u2014 live player list with Realtime",
+      "description": "As a host, I want to see all players and their current status in real-time so I can manage the session.",
+      "acceptanceCriteria": [
+        "Host dashboard lists all active players (is_active=true) with name, Elo, and status badge",
+        "Status badges: green=available, blue=playing, gray=resting",
+        "List subscribes to Supabase Realtime on players table and updates without page refresh",
+        "Each player row has a 'Remove' button that sets is_active=false (hides player from pool)",
+        "Each player's Elo is editable inline \u2014 clicking it shows an integer input that saves on Enter or blur",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 8,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-009",
+      "title": "Host dashboard \u2014 match suggestion",
+      "description": "As a host, I want the app to suggest the most balanced 2v2 match so games are fair and competitive.",
+      "acceptanceCriteria": [
+        "'Suggest Match' button is disabled when fewer than 4 players have status='available'",
+        "Clicking the button runs the suggestion algorithm: evaluates all C(n,4)*3 team splits of available players, picks the split with the smallest win probability delta using team average Elo",
+        "Suggested match is displayed: Team A (Player1 & Player2) vs Team B (Player1 & Player2) with win % shown for each team",
+        "Host can click 'Accept' to insert a match row and set all 4 players to status='playing'",
+        "Host can click 'Re-shuffle' to run the algorithm again and show a new suggestion",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 9,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-010",
+      "title": "Host dashboard \u2014 score entry and Elo update",
+      "description": "As a host, I want to enter the final score of a match so Elo ratings update and the leaderboard reflects results.",
+      "acceptanceCriteria": [
+        "Active matches (players with status='playing') are listed on host dashboard with score inputs for Team A and Team B",
+        "Host enters integer scores and clicks 'Submit Score'",
+        "Server action calls calculateEloChange() from lib/elo.ts with the 4 player Elos and scores",
+        "Match row is updated with score_a, score_b, and elo_change",
+        "All 4 players' elo values are updated in the players table",
+        "All 4 players' statuses revert to 'available' after score submission",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 10,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-011",
+      "title": "Live leaderboard page (public, slug-gated)",
+      "description": "As a player or spectator, I want to view a live leaderboard so I can see rankings at any time.",
+      "acceptanceCriteria": [
+        "Page at /session/[slug] shows a leaderboard \u2014 no join required, accessible to anyone with the slug",
+        "Leaderboard shows rank, nickname, Elo, and status badge for each active player (is_active=true), sorted by Elo descending",
+        "Page subscribes to Supabase Realtime on players table \u2014 updates without refresh when Elo or status changes",
+        "If session status is 'ended', show a 'Session Ended' banner above the final standings",
+        "Player view and host dashboard both link to or embed this leaderboard",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 11,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-012",
+      "title": "End session and archived summary",
+      "description": "As a host, I want to end the session and produce a read-only summary so final standings are preserved.",
+      "acceptanceCriteria": [
+        "Host dashboard shows an 'End Session' button",
+        "Clicking it opens a confirmation Dialog (Shadcn Dialog component)",
+        "If any matches are active (players with status='playing'), show a warning in the dialog before allowing confirmation",
+        "On confirm, update session status to 'ended' in Supabase",
+        "After ending, /session/[slug] shows the leaderboard in read-only archived mode with a 'Session Ended' banner",
+        "No new players can join an ended session (join page shows friendly message)",
+        "Host dashboard shows a permanent 'Session Ended' banner and disables Suggest Match and End Session buttons",
+        "Typecheck passes",
+        "Verify in browser using dev-browser skill"
+      ],
+      "priority": 12,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}
