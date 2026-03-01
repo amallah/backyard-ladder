@@ -1,3 +1,17 @@
+## 2026-03-01 - US-012
+Thread: https://ampcode.com/threads/$AMP_CURRENT_THREAD_ID
+- Added `endSession(sessionId)` server action to `actions.ts`: updates session status to 'ended'
+- Created `EndSessionButton.tsx` (client component): uses `@radix-ui/react-dialog` (already installed) for confirmation dialog. Warns if `hasPlayingPlayers=true`. On confirm, calls `endSession()` then `router.refresh()` to re-render the server component with the new session status
+- Updated `host/page.tsx`: computes `sessionEnded` and `hasPlayingPlayers` from fetched data, shows red "Session Ended" banner at top when session is ended, passes `sessionEnded` to PlayerList, adds `EndSessionButton` in its own card at the bottom
+- Updated `PlayerList.tsx`: accepts `sessionEnded?: boolean` prop, disables Suggest Match button and changes its label to "Session Ended" when the session has ended
+- Files changed: src/app/actions.ts, src/app/session/[slug]/host/EndSessionButton.tsx (new), src/app/session/[slug]/host/page.tsx, src/app/session/[slug]/host/PlayerList.tsx
+- **Learnings for future iterations:**
+  - `@radix-ui/react-dialog` was already installed — use it directly without needing Shadcn CLI
+  - `router.refresh()` (from `useRouter`) after a server action re-fetches server component data and updates all props passed down (like `sessionEnded`), so the UI reflects the new state without a full page reload
+  - The `hasPlayingPlayers` warning uses server-fetched initial data (not Realtime) — acceptable for a confirmation dialog since the host can visually see the active matches section
+  - Pattern: pass `sessionEnded` from server component down to client components as a prop; `router.refresh()` keeps it in sync after mutations
+---
+
 ## 2026-03-01 - US-011
 Thread: https://ampcode.com/threads/$AMP_CURRENT_THREAD_ID
 - Created `src/app/session/[slug]/page.tsx` (server component): fetches session by slug (notFound if missing), fetches active players (is_active=true) sorted by Elo desc, passes to Leaderboard client component
