@@ -1,0 +1,38 @@
+{
+  "project": "CampApp",
+  "branchName": "ralph/post-oauth-navigation",
+  "description": "Fix the post-Google-OAuth sign-in loop: add auth guard debug logging first, then fix the race condition that routes users back to /sign-in after a successful sign-in.",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "Add navigation debug logging to the auth guard",
+      "description": "As a developer, I want the auth guard to log its state and decisions on every run so I can trace exactly what caused any unexpected routing.",
+      "acceptanceCriteria": [
+        "Every time the `useEffect` in `campapp/apps/expo/app/_layout.tsx` fires and is not short-circuited by `if (loading) return`, it logs a single line containing: `segments` as a JSON string, whether `session` is `'SET'` or `'NULL'` (do not log the token), and the `loading` value",
+        "When the guard calls `router.replace('/sign-in')`, it logs `'[auth-guard] → /sign-in'`",
+        "When the guard calls `router.replace('/splash')`, it logs `'[auth-guard] → /splash'`",
+        "When the guard takes no action, it logs `'[auth-guard] → (no action)'`",
+        "All log statements are wrapped in `if (__DEV__)` so they produce no output in production builds",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": true,
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "Fix post-OAuth routing — user lands back on sign-in after successful Google sign-in",
+      "description": "As a user, I want to be taken to the app after signing in with Google so that I don't have to sign in repeatedly.",
+      "acceptanceCriteria": [
+        "Tapping 'Sign in with Google' on a fresh install and completing the OAuth flow routes the user to `/splash`, not back to `/sign-in`",
+        "Tapping 'Sign in with Google' after having signed in before (firstLoginSeen already set in AsyncStorage) routes the user to `/(tabs)`, not back to `/sign-in`",
+        "Cancelling the OAuth browser (result.type === 'cancel' or 'dismiss') keeps the user on `/sign-in` with the cancellation error message — no unintended navigation",
+        "The debug logs from US-001 confirm that '[auth-guard] → /sign-in' is NOT emitted after a successful OAuth completion",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": true,
+      "notes": "Root cause: auth guard fires with session:null + loading:false during the window between browser close and exchangeCodeForSession completing. Fix options (choose simplest confirmed by US-001 logs): A) confirm !onSignInScreen already prevents re-nav; B) isExchangingSession ref/flag to skip guard; C) explicit router.replace('/splash') in sign-in.tsx after exchange succeeds."
+    }
+  ]
+}
