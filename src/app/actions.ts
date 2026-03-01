@@ -91,3 +91,30 @@ export async function updatePlayerElo(
 
   if (error) throw new Error(`Failed to update Elo: ${error.message}`);
 }
+
+export async function acceptMatch(
+  sessionId: string,
+  playerA1: string,
+  playerA2: string,
+  playerB1: string,
+  playerB2: string
+): Promise<void> {
+  const { error: matchError } = await supabase
+    .from("matches")
+    .insert({
+      session_id: sessionId,
+      player_a1: playerA1,
+      player_a2: playerA2,
+      player_b1: playerB1,
+      player_b2: playerB2,
+    });
+
+  if (matchError) throw new Error(`Failed to create match: ${matchError.message}`);
+
+  const { error: playerError } = await supabase
+    .from("players")
+    .update({ status: "playing" })
+    .in("id", [playerA1, playerA2, playerB1, playerB2]);
+
+  if (playerError) throw new Error(`Failed to update player statuses: ${playerError.message}`);
+}
