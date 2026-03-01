@@ -1,3 +1,17 @@
+## 2026-03-01 - US-010
+Thread: https://ampcode.com/threads/$AMP_CURRENT_THREAD_ID
+- Added `submitScore(matchId, scoreA, scoreB)` server action to `actions.ts`: fetches match row → fetches 4 players' current Elos → calls `calculateEloChange()` → updates match (score_a, score_b, elo_change) → updates each player's elo and status='available' via parallel promises
+- Updated `host/page.tsx` to fetch initial active matches (`score_a IS NULL`) and pass as `initialMatches` to `PlayerList`
+- Updated `PlayerList.tsx`: added `Match` type, `matches`/`scoreInputs`/`submittingMatchId` state, Realtime subscription on `matches` table (INSERT adds to list, UPDATE with non-null score_a removes), "Active Matches" section UI with Team A/B player name lookup via `playerMap`, per-match score inputs, Submit Score button (disabled when inputs invalid or submitting)
+- Files changed: src/app/actions.ts, src/app/session/[slug]/host/page.tsx, src/app/session/[slug]/host/PlayerList.tsx
+- **Learnings for future iterations:**
+  - Two Realtime channels can be created from a single `createClient()` instance in one `useEffect`; clean up both channels in the return function
+  - Match Realtime pattern: INSERT → add if score_a===null; UPDATE → remove if score_a!==null (scored match)
+  - `playerMap = new Map(players.map(p => [p.id, p]))` is the lookup pattern for resolving player IDs to names within the same component
+  - `submitScore` fetches fresh Elos from DB (not from client state) to avoid race conditions with Realtime updates
+  - `Promise.all([...])` for parallel player Elo updates — 4 independent DB writes that can run concurrently
+---
+
 ## 2026-03-01 - US-009
 Thread: https://ampcode.com/threads/$AMP_CURRENT_THREAD_ID
 - Added match suggestion section to host dashboard's `PlayerList.tsx`
