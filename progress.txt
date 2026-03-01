@@ -3,7 +3,25 @@
 - Use `supabase.from("table").select().maybeSingle()` for optional single-row queries (returns null if not found, no error)
 - Project uses Next.js App Router with TypeScript; typecheck via `npm run typecheck`
 - All lib utilities go in `src/lib/`
+- Dynamic pages use `params: Promise<{ slug: string }>` and `await params` (Next.js 16 App Router pattern)
+- Split server components (data fetching + notFound) from client components (interactive / third-party React libs like react-qr-code)
+- Use `headers()` from `next/headers` to get request host for building absolute URLs in server components
 
+---
+
+## 2026-03-01 - US-005
+Thread: https://ampcode.com/threads/$AMP_CURRENT_THREAD_ID
+- Created `/session/[slug]/host` route as a host dashboard with QR code
+- Server component `page.tsx` fetches session by slug, returns 404 via `notFound()` if missing
+- Client component `QRDisplay.tsx` wraps `react-qr-code` to render large QR pointing to `/session/[slug]/join`
+- Join URL built from request `host` header to work in both dev and production
+- Session slug and sport displayed as text fallback alongside the QR code
+- Files changed: src/app/session/[slug]/host/page.tsx, src/app/session/[slug]/host/QRDisplay.tsx
+- **Learnings for future iterations:**
+  - `react-qr-code` requires a client component wrapper (`"use client"`) due to React internals
+  - Next.js 16 App Router: `params` is a Promise — must `await params` to destructure slug
+  - `await headers()` from `next/headers` gives request headers in server components; use `host` header to build absolute URLs
+  - `notFound()` from `next/navigation` triggers the nearest not-found.tsx or default 404 page
 ---
 
 ## 2026-03-01 - US-002
