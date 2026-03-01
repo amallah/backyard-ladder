@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { QRDisplay } from "./QRDisplay";
 import { PlayerList } from "./PlayerList";
@@ -44,6 +45,12 @@ export default async function HostPage({ params }: HostPageProps) {
           <div className="text-center space-y-1">
             <h1 className="text-2xl font-bold">Host Dashboard</h1>
             <p className="text-gray-500 text-sm">{session.sport} · {slug}</p>
+            <Link
+              href={`/session/${slug}`}
+              className="text-sm text-blue-600 hover:underline"
+            >
+              View Leaderboard →
+            </Link>
           </div>
 
           <div className="flex flex-col items-center gap-2">

@@ -1,4 +1,5 @@
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { StatusToggle } from "./StatusToggle";
 
@@ -41,6 +42,12 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
           <p className="text-gray-500 text-sm">Status: {statusLabel}</p>
         </div>
         <StatusToggle playerId={player.id} status={player.status} />
+        <Link
+          href={`/session/${slug}`}
+          className="text-sm text-blue-600 hover:underline text-center"
+        >
+          View Leaderboard →
+        </Link>
       </div>
     </main>
   );
