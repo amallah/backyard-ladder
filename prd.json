@@ -117,8 +117,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 7,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Created src/app/session/[slug]/player/[id]/page.tsx (server component: fetches player + validates session slug, notFound on mismatch) and StatusToggle.tsx (client component: useTransition + router.refresh for optimistic toggle). Added togglePlayerStatus server action to actions.ts. Build and typecheck pass."
     },
     {
       "id": "US-008",

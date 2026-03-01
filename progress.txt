@@ -1,3 +1,17 @@
+## 2026-03-01 - US-007
+Thread: https://ampcode.com/threads/$AMP_CURRENT_THREAD_ID
+- Created `/session/[slug]/player/[id]` route showing player nickname, Elo, and status
+- Server component `page.tsx` fetches player by id, validates slug matches session, returns 404 on mismatch
+- Client component `StatusToggle.tsx` uses `useTransition` + `router.refresh()` to toggle status without full navigation
+- Added `togglePlayerStatus` server action to `actions.ts`: fetches current status, guards against 'playing' state, toggles available<->resting
+- Files changed: src/app/actions.ts, src/app/session/[slug]/player/[id]/page.tsx, src/app/session/[slug]/player/[id]/StatusToggle.tsx
+- **Learnings for future iterations:**
+  - `useTransition` + `router.refresh()` is the right pattern for server-action mutations that need to re-render server component data without full page navigation
+  - For player routes with both `[slug]` and `[id]` params: `params: Promise<{ slug: string; id: string }>` — await both together
+  - Validate that player's session matches the slug in the URL to prevent cross-session access
+  - Button disabled state: combine `isPlaying || isPending` to block clicks during both server-side playing status and in-flight transitions
+---
+
 ## 2026-03-01 - US-006
 Thread: https://ampcode.com/threads/$AMP_CURRENT_THREAD_ID
 - Created `/session/[slug]/join` route for players to join a session by nickname
