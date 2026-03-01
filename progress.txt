@@ -17,6 +17,18 @@ Thread: https://ampcode.com/threads/$AMP_CURRENT_THREAD_ID
   - Supabase client is already configured and exported from `src/lib/supabase.ts`
 ---
 
+## 2026-03-01 - US-004
+Thread: https://ampcode.com/threads/$AMP_CURRENT_THREAD_ID
+- Implemented home page `/` with "Create Session" form (sport selector: Pickleball/Cornhole, Submit button)
+- Created `src/app/actions.ts` with `createSession` server action using `"use server"` directive
+- Server action calls `generateSlug()`, inserts into `sessions` table, redirects to `/session/[slug]/host`
+- Files changed: src/app/page.tsx, src/app/actions.ts
+- **Learnings for future iterations:**
+  - Next.js App Router server actions use `"use server"` at top of file; form `action={serverAction}` wires them in Server Components
+  - `formData.get("field")` returns `string | File | null`; cast with `as string` when field is required text
+  - The redirect to `/session/[slug]/host` will 404 until US-005 creates that route — that's expected
+---
+
 ## 2026-03-01 - US-003
 Thread: https://ampcode.com/threads/$AMP_CURRENT_THREAD_ID
 - Implemented `src/lib/elo.ts` with `calculateEloChange(input: MatchInput): EloResult`

@@ -67,8 +67,8 @@
         "Verify in browser using dev-browser skill"
       ],
       "priority": 4,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Created src/app/actions.ts with createSession server action (generateSlug + insert + redirect). Updated src/app/page.tsx with sport selector form."
     },
     {
       "id": "US-005",
