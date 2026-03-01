@@ -159,6 +159,15 @@ export async function submitScore(
   ]);
 }
 
+export async function endSession(sessionId: string): Promise<void> {
+  const { error } = await supabase
+    .from("sessions")
+    .update({ status: "ended" })
+    .eq("id", sessionId);
+
+  if (error) throw new Error(`Failed to end session: ${error.message}`);
+}
+
 export async function acceptMatch(
   sessionId: string,
   playerA1: string,

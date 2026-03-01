@@ -34,6 +34,7 @@ interface PlayerListProps {
   initialPlayers: Player[];
   initialMatches: Match[];
   sessionId: string;
+  sessionEnded?: boolean;
 }
 
 function statusBadgeClass(status: string): string {
@@ -76,7 +77,7 @@ function generateAllSuggestions(available: Player[]): MatchSuggestion[] {
   return results;
 }
 
-export function PlayerList({ initialPlayers, initialMatches, sessionId }: PlayerListProps) {
+export function PlayerList({ initialPlayers, initialMatches, sessionId, sessionEnded = false }: PlayerListProps) {
   const [players, setPlayers] = useState<Player[]>(initialPlayers);
   const [matches, setMatches] = useState<Match[]>(initialMatches);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -373,10 +374,12 @@ export function PlayerList({ initialPlayers, initialMatches, sessionId }: Player
       <div className="border-t pt-4 flex flex-col gap-3">
         <button
           onClick={handleSuggestMatch}
-          disabled={availablePlayers.length < 4}
+          disabled={sessionEnded || availablePlayers.length < 4}
           className="w-full py-2 px-4 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-40 disabled:cursor-not-allowed"
         >
-          {availablePlayers.length < 4
+          {sessionEnded
+            ? "Session Ended"
+            : availablePlayers.length < 4
             ? `Suggest Match (need ${4 - availablePlayers.length} more available)`
             : "Suggest Match"}
         </button>

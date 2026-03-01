@@ -4,6 +4,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { QRDisplay } from "./QRDisplay";
 import { PlayerList } from "./PlayerList";
+import { EndSessionButton } from "./EndSessionButton";
 
 interface HostPageProps {
   params: Promise<{ slug: string }>;
@@ -38,9 +39,18 @@ export default async function HostPage({ params }: HostPageProps) {
   const protocol = host.startsWith("localhost") ? "http" : "https";
   const joinUrl = `${protocol}://${host}/session/${slug}/join`;
 
+  const sessionEnded = session.status === "ended";
+  const hasPlayingPlayers = (players ?? []).some((p) => p.status === "playing");
+
   return (
     <main className="min-h-screen bg-gray-50 flex flex-col items-center py-10 px-6">
       <div className="w-full max-w-lg flex flex-col gap-6">
+        {sessionEnded && (
+          <div className="bg-red-50 border border-red-300 rounded-xl px-4 py-3 text-center">
+            <p className="text-red-700 font-semibold text-sm">Session Ended — Final Standings</p>
+          </div>
+        )}
+
         <div className="bg-white rounded-xl border shadow-sm p-8 flex flex-col gap-8">
           <div className="text-center space-y-1">
             <h1 className="text-2xl font-bold">Host Dashboard</h1>
@@ -66,6 +76,15 @@ export default async function HostPage({ params }: HostPageProps) {
             initialPlayers={players ?? []}
             initialMatches={matches ?? []}
             sessionId={session.id}
+            sessionEnded={sessionEnded}
+          />
+        </div>
+
+        <div className="bg-white rounded-xl border shadow-sm p-4">
+          <EndSessionButton
+            sessionId={session.id}
+            sessionEnded={sessionEnded}
+            hasPlayingPlayers={hasPlayingPlayers}
           />
         </div>
       </div>
