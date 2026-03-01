@@ -50,3 +50,23 @@ export async function joinSession(
 
   redirect(`/session/${slug}/player/${player.id}`);
 }
+
+export async function togglePlayerStatus(playerId: string): Promise<void> {
+  const { data: player, error: fetchError } = await supabase
+    .from("players")
+    .select("status")
+    .eq("id", playerId)
+    .maybeSingle();
+
+  if (fetchError || !player) throw new Error("Player not found");
+  if (player.status === "playing") return;
+
+  const newStatus = player.status === "available" ? "resting" : "available";
+
+  const { error } = await supabase
+    .from("players")
+    .update({ status: newStatus })
+    .eq("id", playerId);
+
+  if (error) throw new Error(`Failed to update status: ${error.message}`);
+}
