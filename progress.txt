@@ -1,0 +1,31 @@
+## Codebase Patterns
+- Supabase client is exported from `src/lib/supabase.ts` as `supabase` (singleton)
+- Use `supabase.from("table").select().maybeSingle()` for optional single-row queries (returns null if not found, no error)
+- Project uses Next.js App Router with TypeScript; typecheck via `npm run typecheck`
+- All lib utilities go in `src/lib/`
+
+---
+
+## 2026-03-01 - US-002
+Thread: https://ampcode.com/threads/$AMP_CURRENT_THREAD_ID
+- Implemented `src/lib/slug.ts` with `generateSlug(): Promise<string>`
+- Wordlists of ~55 adjectives and ~55 nouns embedded; random combination produces adjective-noun slugs
+- Queries `sessions` table via Supabase to check for collision, retries up to 5 times before throwing
+- Files changed: src/lib/slug.ts
+- **Learnings for future iterations:**
+  - `supabase.maybeSingle()` is the right method when a row may or may not exist (avoids PGRST116 error from `.single()`)
+  - Supabase client is already configured and exported from `src/lib/supabase.ts`
+---
+
+## 2026-03-01 - US-003
+Thread: https://ampcode.com/threads/$AMP_CURRENT_THREAD_ID
+- Implemented `src/lib/elo.ts` with `calculateEloChange(input: MatchInput): EloResult`
+- Pure function: team avg Elo, expected outcome (E_A = 1/(1+10^((R_B-R_A)/400))), MOV multiplier, K=32
+- Clamped MOV denominator to min 0.1 to prevent division by zero when underdog wins by large margin
+- EloResult returns rounded new Elos for all 4 players and elo_change magnitude
+- Files changed: src/lib/elo.ts
+- **Learnings for future iterations:**
+  - MOV multiplier formula: M = ln(|score_A - score_B| + 1) * 2.2 / ((R_winner - R_loser) * 0.001 + 2.2)
+  - In a draw (score_a == score_b), margin=0 so M=0, resulting in no Elo change
+  - US-010 (score entry) will import `calculateEloChange` from `src/lib/elo.ts`
+---

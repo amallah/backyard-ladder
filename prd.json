@@ -32,8 +32,8 @@
         "Typecheck passes"
       ],
       "priority": 2,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Created src/lib/slug.ts with adjective-noun wordlists, Supabase collision check, and up to 5 retry attempts."
     },
     {
       "id": "US-003",
@@ -51,8 +51,8 @@
         "Typecheck passes"
       ],
       "priority": 3,
-      "passes": false,
-      "notes": ""
+      "passes": true,
+      "notes": "Created src/lib/elo.ts with pure calculateEloChange(MatchInput): EloResult. Team avg Elo, expected outcome, MOV multiplier, K=32. Denominator clamped to 0.1 to avoid division by zero for large upsets."
     },
     {
       "id": "US-004",
