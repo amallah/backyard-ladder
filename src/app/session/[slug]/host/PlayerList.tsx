@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { createClient } from "@supabase/supabase-js";
-import { removePlayer, updatePlayerElo, acceptMatch } from "@/app/actions";
+import { removePlayer, updatePlayerElo, acceptMatch, submitScore } from "@/app/actions";
 
 type Player = {
   id: string;
@@ -10,6 +10,16 @@ type Player = {
   elo: number;
   status: string;
   is_active: boolean;
+};
+
+type Match = {
+  id: string;
+  player_a1: string;
+  player_a2: string;
+  player_b1: string;
+  player_b2: string;
+  score_a: number | null;
+  score_b: number | null;
 };
 
 type MatchSuggestion = {
@@ -22,6 +32,7 @@ type MatchSuggestion = {
 
 interface PlayerListProps {
   initialPlayers: Player[];
+  initialMatches: Match[];
   sessionId: string;
 }
 
@@ -65,8 +76,9 @@ function generateAllSuggestions(available: Player[]): MatchSuggestion[] {
   return results;
 }
 
-export function PlayerList({ initialPlayers, sessionId }: PlayerListProps) {
+export function PlayerList({ initialPlayers, initialMatches, sessionId }: PlayerListProps) {
   const [players, setPlayers] = useState<Player[]>(initialPlayers);
+  const [matches, setMatches] = useState<Match[]>(initialMatches);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
   const [isPending, startTransition] = useTransition();
@@ -75,13 +87,16 @@ export function PlayerList({ initialPlayers, sessionId }: PlayerListProps) {
   const [suggestionIndex, setSuggestionIndex] = useState(0);
   const [isAccepting, startAcceptTransition] = useTransition();
 
+  const [scoreInputs, setScoreInputs] = useState<Record<string, { a: string; b: string }>>({});
+  const [submittingMatchId, setSubmittingMatchId] = useState<string | null>(null);
+
   useEffect(() => {
     const client = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
     );
 
-    const channel = client
+    const playerChannel = client
       .channel(`players-${sessionId}`)
       .on(
         "postgres_changes",
@@ -114,13 +129,42 @@ export function PlayerList({ initialPlayers, sessionId }: PlayerListProps) {
       )
       .subscribe();
 
+    const matchChannel = client
+      .channel(`matches-${sessionId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "matches",
+          filter: `session_id=eq.${sessionId}`,
+        },
+        (payload) => {
+          if (payload.eventType === "INSERT") {
+            const newMatch = payload.new as Match;
+            if (newMatch.score_a === null) {
+              setMatches((prev) => [...prev, newMatch]);
+            }
+          } else if (payload.eventType === "UPDATE") {
+            const updated = payload.new as Match;
+            if (updated.score_a !== null) {
+              // Match scored — remove from active list
+              setMatches((prev) => prev.filter((m) => m.id !== updated.id));
+            }
+          }
+        }
+      )
+      .subscribe();
+
     return () => {
-      client.removeChannel(channel);
+      client.removeChannel(playerChannel);
+      client.removeChannel(matchChannel);
     };
   }, [sessionId]);
 
   const activePlayers = players.filter((p) => p.is_active);
   const availablePlayers = activePlayers.filter((p) => p.status === "available");
+  const playerMap = new Map(players.map((p) => [p.id, p]));
 
   function handleRemove(playerId: string) {
     startTransition(async () => {
@@ -165,6 +209,33 @@ export function PlayerList({ initialPlayers, sessionId }: PlayerListProps) {
       );
       setSuggestions([]);
     });
+  }
+
+  function getScoreInput(matchId: string) {
+    return scoreInputs[matchId] ?? { a: "", b: "" };
+  }
+
+  function setScore(matchId: string, team: "a" | "b", value: string) {
+    setScoreInputs((prev) => ({
+      ...prev,
+      [matchId]: { ...getScoreInput(matchId), [team]: value },
+    }));
+  }
+
+  async function handleSubmitScore(matchId: string) {
+    const { a, b } = getScoreInput(matchId);
+    const scoreA = parseInt(a, 10);
+    const scoreB = parseInt(b, 10);
+    if (isNaN(scoreA) || isNaN(scoreB) || scoreA < 0 || scoreB < 0) return;
+
+    setSubmittingMatchId(matchId);
+    try {
+      await submitScore(matchId, scoreA, scoreB);
+    } catch (e) {
+      console.error("Failed to submit score:", e);
+    } finally {
+      setSubmittingMatchId(null);
+    }
   }
 
   const currentSuggestion = suggestions[suggestionIndex] ?? null;
@@ -225,6 +296,77 @@ export function PlayerList({ initialPlayers, sessionId }: PlayerListProps) {
             </li>
           ))}
         </ul>
+      )}
+
+      {/* Active Matches Section */}
+      {matches.length > 0 && (
+        <div className="border-t pt-4 flex flex-col gap-3">
+          <h2 className="text-base font-semibold">Active Matches</h2>
+          {matches.map((match) => {
+            const pa1 = playerMap.get(match.player_a1);
+            const pa2 = playerMap.get(match.player_a2);
+            const pb1 = playerMap.get(match.player_b1);
+            const pb2 = playerMap.get(match.player_b2);
+            const { a: scoreA, b: scoreB } = getScoreInput(match.id);
+            const isSubmitting = submittingMatchId === match.id;
+            const canSubmit =
+              scoreA !== "" &&
+              scoreB !== "" &&
+              !isNaN(parseInt(scoreA, 10)) &&
+              !isNaN(parseInt(scoreB, 10)) &&
+              parseInt(scoreA, 10) >= 0 &&
+              parseInt(scoreB, 10) >= 0;
+
+            return (
+              <div
+                key={match.id}
+                className="bg-orange-50 border border-orange-200 rounded-lg p-4 flex flex-col gap-3"
+              >
+                <div className="flex items-stretch gap-2">
+                  <div className="flex-1 bg-white rounded-lg border p-3 text-center">
+                    <p className="text-xs text-gray-500 mb-1">Team A</p>
+                    <p className="text-sm font-medium">{pa1?.name ?? "?"}</p>
+                    <p className="text-sm font-medium">{pa2?.name ?? "?"}</p>
+                    <input
+                      type="number"
+                      min={0}
+                      value={scoreA}
+                      onChange={(e) => setScore(match.id, "a", e.target.value)}
+                      placeholder="Score"
+                      className="mt-2 w-full text-center text-sm border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-orange-400"
+                    />
+                  </div>
+
+                  <div className="flex items-center text-gray-400 font-bold text-sm">
+                    vs
+                  </div>
+
+                  <div className="flex-1 bg-white rounded-lg border p-3 text-center">
+                    <p className="text-xs text-gray-500 mb-1">Team B</p>
+                    <p className="text-sm font-medium">{pb1?.name ?? "?"}</p>
+                    <p className="text-sm font-medium">{pb2?.name ?? "?"}</p>
+                    <input
+                      type="number"
+                      min={0}
+                      value={scoreB}
+                      onChange={(e) => setScore(match.id, "b", e.target.value)}
+                      placeholder="Score"
+                      className="mt-2 w-full text-center text-sm border rounded px-2 py-1 focus:outline-none focus:ring-1 focus:ring-orange-400"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => handleSubmitScore(match.id)}
+                  disabled={!canSubmit || isSubmitting}
+                  className="w-full py-2 px-4 bg-orange-600 text-white text-sm font-medium rounded-lg hover:bg-orange-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {isSubmitting ? "Submitting..." : "Submit Score"}
+                </button>
+              </div>
+            );
+          })}
+        </div>
       )}
 
       {/* Match Suggestion Section */}

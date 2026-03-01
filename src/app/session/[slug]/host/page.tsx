@@ -26,6 +26,12 @@ export default async function HostPage({ params }: HostPageProps) {
     .eq("is_active", true)
     .order("elo", { ascending: false });
 
+  const { data: matches } = await supabase
+    .from("matches")
+    .select("id, player_a1, player_a2, player_b1, player_b2, score_a, score_b")
+    .eq("session_id", session.id)
+    .is("score_a", null);
+
   const headersList = await headers();
   const host = headersList.get("host") ?? "localhost:3000";
   const protocol = host.startsWith("localhost") ? "http" : "https";
@@ -51,6 +57,7 @@ export default async function HostPage({ params }: HostPageProps) {
         <div className="bg-white rounded-xl border shadow-sm p-6">
           <PlayerList
             initialPlayers={players ?? []}
+            initialMatches={matches ?? []}
             sessionId={session.id}
           />
         </div>

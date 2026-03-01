@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { generateSlug } from "@/lib/slug";
 import { supabase } from "@/lib/supabase";
+import { calculateEloChange } from "@/lib/elo";
 
 export async function createSession(formData: FormData) {
   const sport = formData.get("sport") as string;
@@ -90,6 +91,72 @@ export async function updatePlayerElo(
     .eq("id", playerId);
 
   if (error) throw new Error(`Failed to update Elo: ${error.message}`);
+}
+
+export async function submitScore(
+  matchId: string,
+  scoreA: number,
+  scoreB: number
+): Promise<void> {
+  const { data: match, error: matchFetchError } = await supabase
+    .from("matches")
+    .select("player_a1, player_a2, player_b1, player_b2")
+    .eq("id", matchId)
+    .single();
+
+  if (matchFetchError || !match) throw new Error("Match not found");
+
+  const playerIds = [
+    match.player_a1,
+    match.player_a2,
+    match.player_b1,
+    match.player_b2,
+  ];
+
+  const { data: playersData, error: playersFetchError } = await supabase
+    .from("players")
+    .select("id, elo")
+    .in("id", playerIds);
+
+  if (playersFetchError || !playersData) throw new Error("Failed to fetch players");
+
+  const eloMap = new Map(playersData.map((p) => [p.id, p.elo as number]));
+
+  const result = calculateEloChange({
+    eloA1: eloMap.get(match.player_a1) ?? 1000,
+    eloA2: eloMap.get(match.player_a2) ?? 1000,
+    eloB1: eloMap.get(match.player_b1) ?? 1000,
+    eloB2: eloMap.get(match.player_b2) ?? 1000,
+    score_a: scoreA,
+    score_b: scoreB,
+  });
+
+  const { error: matchUpdateError } = await supabase
+    .from("matches")
+    .update({ score_a: scoreA, score_b: scoreB, elo_change: result.elo_change })
+    .eq("id", matchId);
+
+  if (matchUpdateError)
+    throw new Error(`Failed to update match: ${matchUpdateError.message}`);
+
+  await Promise.all([
+    supabase
+      .from("players")
+      .update({ elo: result.newEloA1, status: "available" })
+      .eq("id", match.player_a1),
+    supabase
+      .from("players")
+      .update({ elo: result.newEloA2, status: "available" })
+      .eq("id", match.player_a2),
+    supabase
+      .from("players")
+      .update({ elo: result.newEloB1, status: "available" })
+      .eq("id", match.player_b1),
+    supabase
+      .from("players")
+      .update({ elo: result.newEloB2, status: "available" })
+      .eq("id", match.player_b2),
+  ]);
 }
 
 export async function acceptMatch(
